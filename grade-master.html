@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاسبه معدل</title>
+    <style>
+        /* ۱. تعریف فونت دوران */
+        @font-face {
+            font-family: 'Doran';
+            src: url('Doran-Regular.woff2') format('woff2'),
+                 url('Doran-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary-red: #e53935;
+            --text-gray: #e0e0e0;
+            --border-gray: #333;
+            --input-bg: #2a2a2a;
+            --label-color: #cbcbcb;
+        }
+
+        body {
+            font-family: 'Doran', Tahoma, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-gray);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-bg);
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-gray);
+        }
+
+        .container, .saves-sidebar {
+            box-sizing: border-box; /* حتماً این خط را اضافه کن */
+        }
+
+        h1 { text-align: center; color: var(--primary-red); font-weight: 300; margin-bottom: -8px; }
+        .sub-title { text-align: center; color: white; font-family: 'roboto'; font-size: 0.85rem; margin-bottom: 25px; display: block; opacity: 0.8; }
+
+        .column-labels {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+            padding: 0 5px;
+        }
+
+        .column-labels, .course-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .label-text {
+            font-size: 0.75rem;
+            color: var(--label-color);
+            font-weight: bold;
+        }
+
+        .course-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr; /* دقیقا مثل بالا */
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        input {
+            background: var(--input-bg);
+            border: 1px solid var(--border-gray);
+            color: white;
+            padding: 8px 12px; /* باریک‌تر شدن فیلدها */
+            border-radius: 6px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Doran', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        input:focus { border-color: var(--primary-red); }
+
+        .main-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        button {
+            flex: 1;
+            padding: 8px 12px; /* باریک‌تر شدن دکمه‌ها */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            font-family: 'Doran', sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .btn-add { background: transparent; color: var(--primary-red); border: 1px solid var(--primary-red); }
+        .btn-add:hover { background: var(--primary-red); color: white; }
+
+        .save-dropdown { flex: 1; position: relative; }
+        .btn-main-save { background: transparent; color: var(--primary-red); border: 1px solid var(--primary-red); width: 100%; }
+        .btn-main-save:hover { background: var(--primary-red); color: white; }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            bottom: 115%;
+            left: 0;
+            right: 0;
+            background: #252525;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+            border: 1px solid var(--border-gray);
+            overflow: hidden;
+        }
+
+        .dropdown-content button {
+            background: transparent;
+            color: white;
+            width: 100%;
+            text-align: right;
+            padding: 10px 15px; /* کمی پدینگ بیشتر برای ظاهر بهتر */
+            border-radius: 0;
+            border: none; /* حذف بوردرهای اضافی */
+            border-bottom: 1px solid #333;
+            transition: 0.2s; /* برای نرم‌تر شدن تغییر رنگ */
+        }
+
+        .dropdown-content button:hover {
+             background-color: var(--primary-red); /* استفاده از رنگ قرمز اصلی سایت */
+            color: white; /* سفید ماندن متن */
+            cursor: pointer;
+}
+
+        .btn-reset { background: #333; color: #888; flex: 0.4; }
+
+        .result-area {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-gray);
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .result-area span { font-size: 1rem; }
+
+        #gpa-display { 
+            font-size: 1.5rem; /* کوچک‌تر شدن عدد معدل */
+            color: var(--primary-red); 
+            font-weight: bold; 
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1;
+        }
+
+        /* سایر استایل‌ها ثابت ماند */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-box { background: var(--card-bg); border: 1px solid var(--primary-red); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; }
+        .modal-btns { display: flex; gap: 10px; }
+        .saves-sidebar { width: 100%; max-width: 600px; margin-top: 25px; background: #181818; padding: 15px; border-radius: 12px; border: 1px solid #222; }
+        .saves-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .clear-all { color: #e53935; font-size: 0.75rem; cursor: pointer; }
+        .save-tags { display: flex; flex-direction: column; gap: 8px; }
+        .save-item { background: #252525; padding: 10px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .delete-btn { color: #666; margin-right: 15px; cursor: pointer; font-size: 1.3rem; }
+
+        /* برای گوشی‌های موبایل */
+@media (max-width: 480px) {
+
+    .container {
+        padding: 15px 10px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    .column-labels {
+        display: grid; 
+        grid-template-columns: 2.5fr 1fr 1fr; /* هماهنگ با نسبت ستون‌های بدنه */
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .course-row {
+        grid-template-columns: 1fr; /* تبدیل ۳ ستون به ۱ ستون */
+        gap: 5px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .column-labels, .course-row {
+        grid-template-columns: 1.5fr 1fr 1fr; 
+        gap: 5px;
+    }
+
+    .label-text {
+        font-size: 0.65rem; /* فونت خیلی کوچک برای تیترها */
+        text-align: center;
+    }
+
+    input {
+        padding: 8px 4px; /* کم کردن پدینگ داخلی برای نمایش بهتر اعداد */
+        font-size: 0.8rem;
+        text-align: center; /* اعداد در موبایل وسط‌چین باشند بهتر است */
+    }
+
+    /* جلوگیری از بزرگ شدن بیش از حد نام درس */
+    .course-name {
+        text-align: right; 
+    }
+
+    .main-actions {
+        flex-direction: column; /* زیر هم قرار گرفتن دکمه‌ها */
+    }
+
+    .btn-reset {
+        flex: 1; /* کشیده شدن دکمه ریست */
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>محاسبه‌ی معدل</h1>
+    <span class="sub-title">t.me/a_ghsbni</span>
+    
+    <div class="column-labels">
+        <span class="label-text">نام درس:</span>
+        <span class="label-text">نمره:</span>
+        <span class="label-text">واحد:</span>
+    </div>
+
+    <div id="course-list">
+        <div class="course-row">
+            <input type="text" placeholder="نام درس" class="course-name">
+            <input type="number" placeholder="نمره" class="course-grade" step="0.01">
+            <input type="number" placeholder="واحد" class="course-unit">
+        </div>
+    </div>
+
+    <div class="main-actions">
+        <button class="btn-add" onclick="addCourse()">+ درس جدید</button>
+        
+        <div class="save-dropdown">
+            <button class="btn-main-save" id="saveToggle">ثبت و ذخیره ▾</button>
+            <div id="saveOptions" class="dropdown-content">
+                <button onclick="saveData()">ذخیره در مرورگر</button>
+                <button onclick="exportToFile()">خروجی فایل (TXT)</button>
+            </div>
+        </div>
+
+        <button class="btn-reset" onclick="showModal('all')">ریست</button>
+    </div>
+
+    <div class="result-area">
+        <span>معدل کل:</span>
+        <strong id="gpa-display">0.00</strong>
+    </div>
+</div>
+
+<div class="saves-sidebar">
+    <div class="saves-header">
+        <span style="color:#777; font-size:0.9rem;">تاریخچه ذخیره‌ها:</span>
+        <span class="clear-all" onclick="showModal('history')">پاکسازی کل تاریخچه</span>
+    </div>
+    <div id="saves-container" class="save-tags"></div>
+</div>
+
+<div id="customModal" class="modal-overlay">
+    <div class="modal-box">
+        <p id="modalText">آیا از انجام این عملیات اطمینان دارید؟</p>
+        <div class="modal-btns">
+            <button class="btn-confirm" id="modalConfirm">تأیید</button>
+            <button class="btn-cancel" onclick="closeModal()">انصراف</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // اسکریپت دنباله موس
+    const dots = [];
+    const DOT_COUNT = 8;
+    for (let i = 0; i < DOT_COUNT; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'cursor-trail';
+        document.body.appendChild(dot);
+        dots.push({ el: dot, x: 0, y: 0 });
+    }
+
+    window.addEventListener('mousemove', (e) => {
+        let x = e.clientX;
+        let y = e.clientY;
+        dots.forEach((dot, index) => {
+            const nextDot = dots[index + 1] || dots[0];
+            dot.x = x;
+            dot.y = y;
+            dot.el.style.transform = `translate(${x}px, ${y}px) scale(${(DOT_COUNT - index) / DOT_COUNT})`;
+            dot.el.style.opacity = (DOT_COUNT - index) / DOT_COUNT * 0.6;
+            
+            setTimeout(() => {
+                x += (nextDot.x - dot.x) * 0.3;
+                y += (nextDot.y - dot.y) * 0.3;
+            }, index * 10);
+        });
+    });
+
+    // بقیه توابع اصلی کد شما بدون تغییر
+    let pendingAction = null;
+
+    document.getElementById('saveToggle').onclick = (e) => {
+        e.stopPropagation();
+        const content = document.getElementById('saveOptions');
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
+    };
+
+    window.onclick = () => document.getElementById('saveOptions').style.display = 'none';
+
+    function showModal(type) {
+        const modal = document.getElementById('customModal');
+        const text = document.getElementById('modalText');
+        modal.style.display = 'flex';
+        if (type === 'all') { text.innerText = "آیا می‌خواهید تمام فیلدهای فعلی را پاک کنید؟"; pendingAction = resetFormExecute; } 
+        else if (type === 'history') { text.innerText = "آیا از حذف کل تاریخچه ذخیره‌ها مطمئن هستید؟"; pendingAction = clearHistoryExecute; }
+    }
+
+    function closeModal() { document.getElementById('customModal').style.display = 'none'; pendingAction = null; }
+
+    document.getElementById('modalConfirm').onclick = () => { if (pendingAction) pendingAction(); closeModal(); };
+
+    function addCourse(name = '', grade = '', unit = '') {
+        const container = document.getElementById('course-list');
+        const newRow = document.createElement('div');
+        newRow.className = 'course-row';
+        newRow.innerHTML = `
+            <input type="text" placeholder="نام درس" class="course-name" value="${name}">
+            <input type="number" placeholder="نمره" class="course-grade" step="0.01" value="${grade}">
+            <input type="number" placeholder="واحد" class="course-unit" value="${unit}">
+        `;
+        container.appendChild(newRow);
+        attachListeners();
+        calculateGPA();
+    }
+
+    function calculateGPA() {
+        const rows = document.querySelectorAll('.course-row');
+        let totalPoints = 0, totalUnits = 0;
+        rows.forEach(row => {
+            const grade = parseFloat(row.querySelector('.course-grade').value);
+            const unit = parseFloat(row.querySelector('.course-unit').value);
+            if (!isNaN(grade) && !isNaN(unit)) { totalPoints += (grade * unit); totalUnits += unit; }
+        });
+        const gpa = totalUnits > 0 ? (totalPoints / totalUnits).toFixed(2) : "0.00";
+        document.getElementById('gpa-display').innerText = gpa;
+    }
+
+    function resetFormExecute() { document.getElementById('course-list').innerHTML = ''; addCourse(); }
+    function clearHistoryExecute() { localStorage.removeItem('gpa_saves'); renderSaves(); }
+
+    function saveData() {
+        const rows = document.querySelectorAll('.course-row');
+        const data = [];
+        rows.forEach(row => {
+            const n = row.querySelector('.course-name').value;
+            const g = row.querySelector('.course-grade').value;
+            const u = row.querySelector('.course-unit').value;
+            if(n || g) data.push({ name: n, grade: g, unit: u });
+        });
+        if (data.length === 0) return;
+        const allSaves = JSON.parse(localStorage.getItem('gpa_saves') || '[]');
+        const now = new Date();
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+        const formattedDate = now.toLocaleDateString('fa-IR', options);
+        const saveTitle = `ذخیره معدل ${allSaves.length + 1} - ${formattedDate}`;
+        allSaves.push({ id: Date.now(), title: saveTitle, content: data });
+        localStorage.setItem('gpa_saves', JSON.stringify(allSaves));
+        renderSaves();
+    }
+
+    function renderSaves() {
+        const container = document.getElementById('saves-container');
+        const allSaves = JSON.parse(localStorage.getItem('gpa_saves') || '[]');
+        container.innerHTML = allSaves.length ? '' : '<span style="color:#444; font-size:0.8rem">لیست خالی است.</span>';
+        allSaves.forEach(save => {
+            const item = document.createElement('div');
+            item.className = 'save-item';
+            item.innerHTML = `<div style="cursor:pointer; flex-grow:1" onclick="loadSave(${save.id})">${save.title}</div><div class="delete-btn" onclick="deleteSingle(${save.id})">×</div>`;
+            container.appendChild(item);
+        });
+    }
+
+    function loadSave(id) {
+        const allSaves = JSON.parse(localStorage.getItem('gpa_saves') || '[]');
+        const target = allSaves.find(s => s.id === id);
+        if (target) { document.getElementById('course-list').innerHTML = ''; target.content.forEach(c => addCourse(c.name, c.grade, c.unit)); }
+    }
+
+    function deleteSingle(id) {
+        let allSaves = JSON.parse(localStorage.getItem('gpa_saves') || '[]');
+        allSaves = allSaves.filter(s => s.id !== id);
+        localStorage.setItem('gpa_saves', JSON.stringify(allSaves));
+        renderSaves();
+    }
+
+    function exportToFile() {
+        const rows = document.querySelectorAll('.course-row');
+        let content = "گزارش معدل\n----------\n";
+        rows.forEach(row => { content += `${row.querySelector('.course-name').value || 'درس'}: ${row.querySelector('.course-grade').value} (واحد: ${row.querySelector('.course-unit').value})\n`; });
+        content += `----------\nمعدل کل: ${document.getElementById('gpa-display').innerText}`;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `GPA-Report.txt`;
+        a.click();
+    }
+
+    function attachListeners() { document.querySelectorAll('input').forEach(input => { input.oninput = calculateGPA; }); }
+    renderSaves();
+    attachListeners();
+</script>
+</body>
+</html>
